@@ -101,20 +101,21 @@
         <!-- Acciones -->
         <div class="profile-stats">
             <h3 class="mb-3">Acciones</h3>
-            <div class="d-grid gap-2">
-                <a href="{{ url_for('usuarios.editar_perfil') }}" class="btn btn-primary profile-action-btn">
+           <div class="d-grid gap-2">
+                <a href="{{ url_for('usuarios.editar_perfil') }}" class="btn btn-dark profile-action-btn">
                     <i class="fas fa-user-edit me-2"></i>Editar Perfil
                 </a>
                 <a href="{{ url_for('usuarios.cambiar_contrasena') }}" class="btn btn-secondary profile-action-btn">
                     <i class="fas fa-lock me-2"></i>Cambiar Contraseña
                 </a>
-                <a href="{{ url_for('usuarios.favoritos') }}" class="btn btn-warning profile-action-btn">
+                <a href="{{ url_for('usuarios.favoritos') }}" class="btn btn-danger profile-action-btn">
                     <i class="fas fa-heart me-2"></i>Ver Mis Favoritos
                 </a>
-                <a href="{{ url_for('usuarios.mis_resenas') }}" class="btn btn-info profile-action-btn text-white">
+                <a href="{{ url_for('usuarios.mis_resenas') }}" class="btn btn-primary profile-action-btn text-white">
                     <i class="fas fa-star me-2"></i>Ver Mis Reseñas
                 </a>
             </div>
+
         </div>
     </div>
 
