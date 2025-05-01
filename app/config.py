@@ -8,7 +8,7 @@ class Config:
 
     # Configuración de la base de datos
     SQLALCHEMY_DATABASE_URI = os.environ.get(
-        'DATABASE_URL') or 'mysql+pymysql://root:password@localhost/parcial_db_24_04_2025'
+        'DATABASE_URL') or 'mysql+pymysql://root:@localhost/parcial_db_24_04_2025'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Configuración de archivos subidos

@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, url_for, flash, redirect, request, current_app, abort
 from flask_login import login_required, current_user
 from app import db
-from app.models import Usuario, Producto, Categoria, ImagenProducto, VideoProducto, ImagenCategoria, Resena
+from app.models import Usuario, Producto, Categoria, ImagenProducto, VideoProducto, ImagenCategoria, Resena, Favorito
 from app.admin.forms import (
     ProductoForm, CategoriaForm, ImagenProductoForm,
     VideoProductoForm, ImagenCategoriaForm
@@ -20,14 +20,10 @@ admin = Blueprint('admin', __name__)
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # Por ahora, consideraremos como "admin" al usuario con ID 1
-        # En un sistema real, tendríamos un campo de rol en la tabla de usuarios
-        if not current_user.is_authenticated or current_user.id_usuario != 1:
+        if not current_user.is_authenticated or not current_user.es_admin:
             abort(403)  # Forbidden
         return f(*args, **kwargs)
-
     return decorated_function
-
 
 # Función auxiliar para guardar archivos
 def guardar_archivo(archivo, tipo):
@@ -39,21 +35,25 @@ def guardar_archivo(archivo, tipo):
     filename = f"{uuid.uuid4().hex}_{filename}"
 
     if tipo == 'imagen_producto':
-        ruta = os.path.join(current_app.config['UPLOAD_FOLDER'], 'productos/imagenes', filename)
+        directorio_relativo = 'productos/imagenes'
     elif tipo == 'video_producto':
-        ruta = os.path.join(current_app.config['UPLOAD_FOLDER'], 'productos/videos', filename)
+        directorio_relativo = 'productos/videos'
     elif tipo == 'imagen_categoria':
-        ruta = os.path.join(current_app.config['UPLOAD_FOLDER'], 'categorias/imagenes', filename)
+        directorio_relativo = 'categorias/imagenes'
 
-    # Asegurarse de que el directorio exista
-    os.makedirs(os.path.dirname(ruta), exist_ok=True)
+    # Construye las rutas usando posixpath para asegurar barras normales '/'
+    import posixpath
+    ruta_completa = os.path.join(current_app.root_path, 'static', 'uploads', directorio_relativo, filename)
+    # Usamos posixpath.join para garantizar barras normales '/' en la ruta para la base de datos
+    ruta_para_db = posixpath.join('uploads', directorio_relativo, filename)
 
-    # Guardar el archivo
-    archivo.save(ruta)
+    # Asegúrate de que el directorio exista
+    os.makedirs(os.path.dirname(ruta_completa), exist_ok=True)
 
-    # Devolver la ruta relativa para almacenar en la base de datos
-    return os.path.join(tipo.replace('_', '/'), filename)
+    # Guarda el archivo
+    archivo.save(ruta_completa)
 
+    return ruta_para_db
 
 @admin.route('/dashboard')
 @login_required
@@ -371,11 +371,83 @@ def detalle_usuario(usuario_id):
     num_resenas = Resena.query.filter_by(id_usuario=usuario_id).count()
     # Obtener número de favoritos
     num_favoritos = Favorito.query.filter_by(id_usuario=usuario_id).count()
+    # Obtener últimas reseñas
+    ultimas_resenas = Resena.query.filter_by(id_usuario=usuario_id).order_by(desc(Resena.fecha_hora)).limit(5).all()
+    # Obtener favoritos recientes
+    favoritos_recientes = db.session.query(Producto).join(Favorito).filter(Favorito.id_usuario == usuario_id).order_by(desc(Favorito.fecha_agregado)).limit(6).all()
 
     return render_template(
         'admin/usuarios/detalle.html',
         title=f'Usuario: {usuario.nombre_usuario}',
         usuario=usuario,
         num_resenas=num_resenas,
-        num_favoritos=num_favoritos
+        num_favoritos=num_favoritos,
+        ultimas_resenas=ultimas_resenas,
+        favoritos_recientes=favoritos_recientes
     )
+
+
+@admin.route('/productos/imagen/<int:imagen_id>/eliminar', methods=['POST'])
+@login_required
+@admin_required
+def eliminar_imagen_producto(imagen_id):
+    imagen = ImagenProducto.query.get_or_404(imagen_id)
+    # Guardar referencia al id del producto para redireccionar
+    producto_id = imagen.id_producto
+
+    # Eliminar archivo físico si existe
+    try:
+        archivo_path = os.path.join(current_app.root_path, 'static', imagen.ruta_archivo)
+        if os.path.exists(archivo_path):
+            os.remove(archivo_path)
+    except Exception as e:
+        flash(f'Error al eliminar archivo: {str(e)}', 'warning')
+
+    # Eliminar registro de la base de datos
+    db.session.delete(imagen)
+    db.session.commit()
+
+    flash('Imagen eliminada con éxito', 'success')
+    return redirect(url_for('admin.administrar_imagenes_producto', producto_id=producto_id))
+
+
+@admin.route('/productos/video/<int:video_id>/eliminar', methods=['POST'])
+@login_required
+@admin_required
+def eliminar_video_producto(video_id):
+    video = VideoProducto.query.get_or_404(video_id)
+    producto_id = video.id_producto
+
+    try:
+        archivo_path = os.path.join(current_app.root_path, 'static', video.ruta_archivo)
+        if os.path.exists(archivo_path):
+            os.remove(archivo_path)
+    except Exception as e:
+        flash(f'Error al eliminar archivo: {str(e)}', 'warning')
+
+    db.session.delete(video)
+    db.session.commit()
+
+    flash('Video eliminado con éxito', 'success')
+    return redirect(url_for('admin.administrar_videos_producto', producto_id=producto_id))
+
+
+@admin.route('/categorias/imagen/<int:imagen_id>/eliminar', methods=['POST'])
+@login_required
+@admin_required
+def eliminar_imagen_categoria(imagen_id):
+    imagen = ImagenCategoria.query.get_or_404(imagen_id)
+    categoria_id = imagen.id_categoria
+
+    try:
+        archivo_path = os.path.join(current_app.root_path, 'static', imagen.ruta_archivo)
+        if os.path.exists(archivo_path):
+            os.remove(archivo_path)
+    except Exception as e:
+        flash(f'Error al eliminar archivo: {str(e)}', 'warning')
+
+    db.session.delete(imagen)
+    db.session.commit()
+
+    flash('Imagen eliminada con éxito', 'success')
+    return redirect(url_for('admin.administrar_imagenes_categoria', categoria_id=categoria_id))

@@ -1,0 +1,72 @@
+{% extends "layout.html" %}
+
+{% block styles %}
+<style>
+    .admin-container {
+        background-color: #f8f9fa;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .nav-admin {
+        background-color: #343a40;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+
+    .nav-admin .nav-link {
+        color: #fff;
+        padding: 10px 15px;
+    }
+
+    .nav-admin .nav-link.active {
+        background-color: #0d6efd;
+        border-radius: 5px;
+    }
+
+    .nav-admin .nav-link:hover:not(.active) {
+        background-color: rgba(255,255,255,0.1);
+        border-radius: 5px;
+    }
+
+    .admin-table {
+        background-color: #fff;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .admin-table th {
+        background-color: #f8f9fa;
+    }
+</style>
+{% block admin_styles %}{% endblock %}
+{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">{% block admin_title %}Panel de Administración{% endblock %}</h1>
+
+<!-- Menú de Navegación Admin -->
+<nav class="nav-admin">
+    <div class="container">
+        <ul class="nav">
+            <li class="nav-item">
+                <a class="nav-link {% if active_page == 'dashboard' %}active{% endif %}" href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if active_page == 'productos' %}active{% endif %}" href="{{ url_for('admin.listar_productos') }}">Productos</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if active_page == 'categorias' %}active{% endif %}" href="{{ url_for('admin.listar_categorias') }}">Categorías</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if active_page == 'usuarios' %}active{% endif %}" href="{{ url_for('admin.listar_usuarios') }}">Usuarios</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="admin-container">
+    {% block admin_content %}{% endblock %}
+</div>
+{% endblock %}

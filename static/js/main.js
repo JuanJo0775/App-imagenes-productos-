@@ -51,6 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Función para manejar los botones de like/dislike
+// Función para manejar los botones de like/dislike
 function interactuar(tipo, productoId) {
     // Obtener el token CSRF de la página
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -72,29 +73,23 @@ function interactuar(tipo, productoId) {
             const likesCount = document.getElementById('likes-count');
             const dislikesCount = document.getElementById('dislikes-count');
 
+            // Actualizar contadores con los valores devueltos
+            likesCount.textContent = data.likes;
+            dislikesCount.textContent = data.dislikes;
+
             if (tipo === 'like') {
                 if (data.action === 'added' || data.action === 'changed') {
                     likeBtn.classList.add('active-like');
                     dislikeBtn.classList.remove('active-dislike');
-                    likesCount.textContent = parseInt(likesCount.textContent) + 1;
-                    if (data.action === 'changed') {
-                        dislikesCount.textContent = parseInt(dislikesCount.textContent) - 1;
-                    }
                 } else if (data.action === 'removed') {
                     likeBtn.classList.remove('active-like');
-                    likesCount.textContent = parseInt(likesCount.textContent) - 1;
                 }
             } else if (tipo === 'dislike') {
                 if (data.action === 'added' || data.action === 'changed') {
                     dislikeBtn.classList.add('active-dislike');
                     likeBtn.classList.remove('active-like');
-                    dislikesCount.textContent = parseInt(dislikesCount.textContent) + 1;
-                    if (data.action === 'changed') {
-                        likesCount.textContent = parseInt(likesCount.textContent) - 1;
-                    }
                 } else if (data.action === 'removed') {
                     dislikeBtn.classList.remove('active-dislike');
-                    dislikesCount.textContent = parseInt(dislikesCount.textContent) - 1;
                 }
             }
         }

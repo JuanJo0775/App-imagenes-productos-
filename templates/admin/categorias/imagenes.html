@@ -166,18 +166,26 @@
                     {% endif %}
                 </div>
                 
-                <div class="col-md-6 mb-3">
+                <!-- En los templates que cargan imágenes -->
+                <div class="mb-3">
                     {{ form.imagen.label(class="form-label") }}
-                    {% if form.imagen.errors %}
-                        {{ form.imagen(class="form-control is-invalid") }}
-                        <div class="invalid-feedback">
-                            {% for error in form.imagen.errors %}
-                                <span>{{ error }}</span>
-                            {% endfor %}
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <img id="preview-imagen" src="#" alt="Previsualización" style="max-width: 150px; max-height: 150px; display: none;">
                         </div>
-                    {% else %}
-                        {{ form.imagen(class="form-control") }}
-                    {% endif %}
+                        <div class="flex-grow-1">
+                            {% if form.imagen.errors %}
+                                {{ form.imagen(class="form-control is-invalid", onchange="previewImage(this, 'preview-imagen')") }}
+                                <div class="invalid-feedback">
+                                    {% for error in form.imagen.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.imagen(class="form-control", onchange="previewImage(this, 'preview-imagen')") }}
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
             </div>
             

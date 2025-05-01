@@ -1,0 +1,202 @@
+{% extends "layout.html" %}
+
+{% block styles %}
+<style>
+    .search-header {
+        background-color: #f8f9fa;
+        padding: 30px 0;
+        margin-bottom: 30px;
+        border-radius: 15px;
+    }
+
+    .filters-card {
+        background-color: #fff;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .masonry-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+        grid-gap: 20px;
+    }
+
+    .producto-card {
+        transition: transform 0.3s ease;
+        border-radius: 15px;
+        overflow: hidden;
+    }
+
+    .producto-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+
+    .card-img-top {
+        height: 220px;
+        object-fit: cover;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Encabezado de búsqueda -->
+<div class="search-header text-center">
+    <div class="container">
+        <h1 class="mb-3">{{ "Resultados de búsqueda" if query else "Todos los productos" }}</h1>
+        {% if query %}
+        <p class="lead">Resultados para: "{{ query }}"</p>
+        {% endif %}
+
+        <!-- Formulario de búsqueda -->
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <form action="{{ url_for('main.buscar') }}" method="GET" class="d-flex">
+                    <input type="text" name="q" class="form-control form-control-lg me-2" placeholder="Buscar productos..." value="{{ query }}">
+                    <button type="submit" class="btn btn-primary">Buscar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Filtros -->
+    <div class="filters-card">
+        <form action="{{ url_for('main.buscar') }}" method="GET" class="row g-3">
+            <!-- Mantener la búsqueda actual -->
+            <input type="hidden" name="q" value="{{ query }}">
+
+            <div class="col-md-4">
+                <label for="categoria" class="form-label">Categoría</label>
+                <select name="categoria" id="categoria" class="form-select">
+                    <option value="">Todas las categorías</option>
+                    {% for categoria in categorias %}
+                    <option value="{{ categoria.id_categoria }}" {% if categoria_actual == categoria.id_categoria %}selected{% endif %}>
+                        {{ categoria.nombre_categoria }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-4">
+                <label for="ordenar" class="form-label">Ordenar por</label>
+                <select name="ordenar" id="ordenar" class="form-select">
+                    <option value="fecha_desc" {% if ordenar == 'fecha_desc' %}selected{% endif %}>Más recientes primero</option>
+                    <option value="fecha_asc" {% if ordenar == 'fecha_asc' %}selected{% endif %}>Más antiguos primero</option>
+                    <option value="likes_desc" {% if ordenar == 'likes_desc' %}selected{% endif %}>Más likes primero</option>
+                    <option value="likes_asc" {% if ordenar == 'likes_asc' %}selected{% endif %}>Menos likes primero</option>
+                    <option value="nombre_asc" {% if ordenar == 'nombre_asc' %}selected{% endif %}>Nombre (A-Z)</option>
+                    <option value="nombre_desc" {% if ordenar == 'nombre_desc' %}selected{% endif %}>Nombre (Z-A)</option>
+                </select>
+            </div>
+
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Aplicar filtros</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Resultados -->
+    {% if productos.items %}
+    <div class="masonry-grid">
+        {% for producto in productos.items %}
+        <div class="card producto-card shadow-sm">
+            {% if producto.categoria %}
+            <span class="badge bg-primary" style="position: absolute; top: 10px; left: 10px; z-index: 10;">
+                {{ producto.categoria.nombre_categoria }}
+            </span>
+            {% endif %}
+
+            <a href="{{ url_for('productos.ver_producto', producto_id=producto.id_producto) }}" class="text-decoration-none">
+                {% if producto.imagenes %}
+                <img src="{{ url_for('static', filename=producto.imagenes[0].ruta_archivo) }}" class="card-img-top" alt="{{ producto.nombre }}">
+                {% else %}
+                <div class="card-img-top bg-light d-flex align-items-center justify-content-center">
+                    <i class="fas fa-image text-muted fa-3x"></i>
+                </div>
+                {% endif %}
+            </a>
+
+            <div class="card-body">
+                <h5 class="card-title">{{ producto.nombre }}</h5>
+                <p class="card-text text-truncate">{{ producto.descripcion or 'Sin descripción' }}</p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="me-2"><i class="fas fa-heart text-danger"></i> {{ producto.likes }}</span>
+                        <span><i class="fas fa-comment text-primary"></i> {{ producto.comentarios_positivos + producto.comentarios_negativos }}</span>
+                    </div>
+                    <a href="{{ url_for('productos.ver_producto', producto_id=producto.id_producto) }}" class="btn btn-sm btn-primary">Ver más</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Paginación -->
+    {% if productos.pages > 1 %}
+    <nav aria-label="Navegación de páginas" class="mt-5">
+        <ul class="pagination justify-content-center">
+            {% if productos.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('main.buscar', q=query, categoria=categoria_actual, ordenar=ordenar, page=productos.prev_num) }}" aria-label="Anterior">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <a class="page-link" href="#" aria-label="Anterior">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% endif %}
+
+            {% for page_num in productos.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                {% if page_num %}
+                    {% if productos.page == page_num %}
+                    <li class="page-item active">
+                        <a class="page-link" href="{{ url_for('main.buscar', q=query, categoria=categoria_actual, ordenar=ordenar, page=page_num) }}">{{ page_num }}</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('main.buscar', q=query, categoria=categoria_actual, ordenar=ordenar, page=page_num) }}">{{ page_num }}</a>
+                    </li>
+                    {% endif %}
+                {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#">...</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if productos.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('main.buscar', q=query, categoria=categoria_actual, ordenar=ordenar, page=productos.next_num) }}" aria-label="Siguiente">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <a class="page-link" href="#" aria-label="Siguiente">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <div class="alert alert-info text-center">
+        <h4 class="alert-heading">No se encontraron productos</h4>
+        <p>No hay productos que coincidan con tu búsqueda. Intenta con otros términos o explora otras categorías.</p>
+        <hr>
+        <a href="{{ url_for('main.index') }}" class="btn btn-primary">
+            <i class="fas fa-home me-2"></i>Volver al inicio
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

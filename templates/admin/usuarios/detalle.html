@@ -1,0 +1,198 @@
+{% extends "layout.html" %}
+
+{% block styles %}
+<style>
+    .admin-container {
+        background-color: #f8f9fa;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .nav-admin {
+        background-color: #343a40;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+
+    .nav-admin .nav-link {
+        color: #fff;
+        padding: 10px 15px;
+    }
+
+    .nav-admin .nav-link.active {
+        background-color: #0d6efd;
+        border-radius: 5px;
+    }
+
+    .nav-admin .nav-link:hover:not(.active) {
+        background-color: rgba(255,255,255,0.1);
+        border-radius: 5px;
+    }
+
+    .usuario-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .usuario-avatar {
+        width: 80px;
+        height: 80px;
+        background-color: #0d6efd;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        margin-right: 20px;
+    }
+
+    .stats-card {
+        background-color: #fff;
+        border-radius: 10px;
+        padding: 15px;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .stats-number {
+        font-size: 1.8rem;
+        font-weight: bold;
+    }
+
+    .activity-section {
+        background-color: #fff;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Detalle de Usuario</h1>
+
+<!-- Menú de Navegación Admin -->
+<nav class="nav-admin">
+    <div class="container">
+        <ul class="nav">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin.listar_productos') }}">Productos</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin.listar_categorias') }}">Categorías</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="{{ url_for('admin.listar_usuarios') }}">Usuarios</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="admin-container">
+    <!-- Cabecera de usuario -->
+    <div class="usuario-header">
+        <div class="usuario-avatar">
+            {{ usuario.nombre_usuario[0] | upper }}
+        </div>
+        <div>
+            <h2 class="mb-1">{{ usuario.nombre_usuario }}</h2>
+            <p class="text-muted mb-1">{{ usuario.email }}</p>
+            <p class="text-muted mb-0">Miembro desde {{ usuario.fecha_registro.strftime('%d/%m/%Y %H:%M') }}</p>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="stats-card">
+                <div class="stats-number">{{ num_resenas }}</div>
+                <div class="stats-label">Reseñas</div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="stats-card">
+                <div class="stats-number">{{ num_favoritos }}</div>
+                <div class="stats-label">Favoritos</div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="stats-card">
+                <div class="stats-number">{{ usuario.interacciones | length }}</div>
+                <div class="stats-label">Interacciones</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reseñas recientes -->
+    <div class="activity-section mb-4">
+        <h3 class="mb-3">Reseñas Recientes</h3>
+
+        {% if ultimas_resenas %}
+        <div class="list-group">
+            {% for resena in ultimas_resenas %}
+            <div class="list-group-item">
+                <div class="d-flex justify-content-between">
+                    <h5 class="mb-1">{{ resena.producto.nombre }}</h5>
+                    <small>{{ resena.fecha_hora.strftime('%d/%m/%Y %H:%M') }}</small>
+                </div>
+                <p class="mb-1">{{ resena.comentario or 'Sin comentario' }}</p>
+                <div class="d-flex justify-content-between">
+                    <small class="text-warning">{{ resena.estrellitas }}</small>
+                    <span class="badge bg-{{ 'success' if resena.tipo_comentario == 'positivo' else 'danger' }}">
+                        {{ resena.tipo_comentario }}
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <p class="mb-0">Este usuario no ha realizado reseñas.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Favoritos recientes -->
+    <div class="activity-section">
+        <h3 class="mb-3">Productos Favoritos</h3>
+
+        {% if favoritos_recientes %}
+        <div class="row">
+            {% for producto in favoritos_recientes %}
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    {% if producto.imagenes %}
+                    <img src="{{ url_for('static', filename=producto.imagenes[0].ruta_archivo) }}" class="card-img-top" style="height: 150px; object-fit: cover;" alt="{{ producto.nombre }}">
+                    {% else %}
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 150px;">
+                        <i class="fas fa-image text-muted fa-3x"></i>
+                    </div>
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title text-truncate">{{ producto.nombre }}</h5>
+                        <a href="{{ url_for('productos.ver_producto', producto_id=producto.id_producto) }}" class="btn btn-sm btn-outline-primary">Ver Producto</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <p class="mb-0">Este usuario no ha agregado productos a favoritos.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

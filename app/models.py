@@ -52,6 +52,7 @@ class Usuario(db.Model, UserMixin):
     email = db.Column(db.String(100), nullable=False, unique=True)
     contrasena = db.Column(db.String(255), nullable=False)
     fecha_registro = db.Column(db.DateTime, default=datetime.utcnow)
+    es_admin = db.Column(db.Boolean, default=False)
 
     # Relaciones
     resenas = db.relationship('Resena', backref='usuario', lazy=True)

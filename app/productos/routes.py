@@ -131,32 +131,41 @@ def interactuar(producto_id):
         id_producto=producto.id_producto
     ).first()
 
+    # Valores actuales para devolver en la respuesta
+    likes_nuevos = producto.likes
+    dislikes_nuevos = producto.dislikes
+    action = None
+
     if interaccion:
         # Si la interacción es del mismo tipo, eliminarla (toggle)
         if interaccion.tipo_interaccion == tipo:
             # Decrementar contador
             if tipo == 'like':
                 producto.likes = max(0, producto.likes - 1)
+                likes_nuevos = producto.likes
             else:
                 producto.dislikes = max(0, producto.dislikes - 1)
+                dislikes_nuevos = producto.dislikes
 
             db.session.delete(interaccion)
-            db.session.commit()
-            return jsonify({'success': True, 'action': 'removed', 'tipo': tipo})
+            action = 'removed'
         else:
             # Cambiar tipo de interacción
             # Actualizar contadores
             if tipo == 'like':
                 producto.likes += 1
                 producto.dislikes = max(0, producto.dislikes - 1)
+                likes_nuevos = producto.likes
+                dislikes_nuevos = producto.dislikes
             else:
                 producto.dislikes += 1
                 producto.likes = max(0, producto.likes - 1)
+                likes_nuevos = producto.likes
+                dislikes_nuevos = producto.dislikes
 
             interaccion.tipo_interaccion = tipo
             interaccion.fecha_interaccion = datetime.utcnow()
-            db.session.commit()
-            return jsonify({'success': True, 'action': 'changed', 'tipo': tipo})
+            action = 'changed'
     else:
         # Crear nueva interacción
         nueva_interaccion = InteraccionProducto(
@@ -168,13 +177,23 @@ def interactuar(producto_id):
         # Incrementar contador
         if tipo == 'like':
             producto.likes += 1
+            likes_nuevos = producto.likes
         else:
             producto.dislikes += 1
+            dislikes_nuevos = producto.dislikes
 
         db.session.add(nueva_interaccion)
-        db.session.commit()
-        return jsonify({'success': True, 'action': 'added', 'tipo': tipo})
+        action = 'added'
 
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'action': action,
+        'tipo': tipo,
+        'likes': likes_nuevos,
+        'dislikes': dislikes_nuevos
+    })
 
 @productos.route('/producto/<int:producto_id>/favorito', methods=['POST'])
 @login_required
