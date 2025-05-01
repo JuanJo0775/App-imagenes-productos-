@@ -1,0 +1,215 @@
+{% extends "layout.html" %}
+
+{% block styles %}
+<style>
+    .header-section {
+        background-color: #f8f9fa;
+        padding: 40px 0;
+        margin-bottom: 30px;
+        border-radius: 15px;
+    }
+    
+    .resena-card {
+        border-radius: 15px;
+        margin-bottom: 20px;
+        transition: transform 0.3s ease;
+    }
+    
+    .resena-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .puntuacion {
+        color: #f8c01d;
+    }
+    
+    .resena-producto-img {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 10px;
+    }
+    
+    .filters {
+        background-color: #fff;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Sección de encabezado -->
+<div class="header-section text-center">
+    <div class="container">
+        <h1 class="display-5">Mis Reseñas</h1>
+        <p class="lead">Aquí encontrarás todas las reseñas que has dejado en los productos.</p>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Filtros -->
+    <div class="filters mb-4">
+        <form method="GET" action="{{ url_for('usuarios.mis_resenas') }}" class="row gx-3 gy-2 align-items-center">
+            <div class="col-md-4">
+                <label class="form-label" for="puntaje">Puntaje</label>
+                <select name="puntaje" id="puntaje" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="5" {% if request.args.get('puntaje') == '5' %}selected{% endif %}>5 estrellas</option>
+                    <option value="4" {% if request.args.get('puntaje') == '4' %}selected{% endif %}>4 estrellas</option>
+                    <option value="3" {% if request.args.get('puntaje') == '3' %}selected{% endif %}>3 estrellas</option>
+                    <option value="2" {% if request.args.get('puntaje') == '2' %}selected{% endif %}>2 estrellas</option>
+                    <option value="1" {% if request.args.get('puntaje') == '1' %}selected{% endif %}>1 estrella</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" for="tipo">Tipo de comentario</label>
+                <select name="tipo" id="tipo" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="positivo" {% if request.args.get('tipo') == 'positivo' %}selected{% endif %}>Positivos</option>
+                    <option value="negativo" {% if request.args.get('tipo') == 'negativo' %}selected{% endif %}>Negativos</option>
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+            </div>
+        </form>
+    </div>
+
+    {% if resenas.items %}
+    <!-- Lista de reseñas -->
+    {% for resena in resenas.items %}
+    <div class="card resena-card shadow-sm">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-2 mb-3 mb-md-0 text-center">
+                    {% if resena.producto.imagenes %}
+                    <img src="{{ url_for('static', filename=resena.producto.imagenes[0].ruta_archivo) }}" class="resena-producto-img" alt="{{ resena.producto.nombre }}">
+                    {% else %}
+                    <div class="resena-producto-img bg-light d-flex align-items-center justify-content-center">
+                        <i class="fas fa-image text-muted fa-2x"></i>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-10">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h4 class="card-title">{{ resena.producto.nombre }}</h4>
+                            <div class="puntuacion mb-2">{{ resena.estrellitas }}</div>
+                            <span class="badge bg-{{ 'success' if resena.tipo_comentario == 'positivo' else 'danger' }} mb-2">
+                                Comentario {{ resena.tipo_comentario }}
+                            </span>
+                        </div>
+                        <div class="text-muted small">
+                            {{ resena.fecha_hora.strftime('%d/%m/%Y %H:%M') }}
+                        </div>
+                    </div>
+                    
+                    <p class="card-text">{{ resena.comentario or 'Sin comentario' }}</p>
+                    
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <a href="{{ url_for('productos.ver_producto', producto_id=resena.id_producto) }}" class="btn btn-sm btn-outline-primary">
+                            Ver Producto
+                        </a>
+                        <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ resena.id_resena }}">
+                            <i class="fas fa-trash me-1"></i>Eliminar Reseña
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de confirmación de eliminación -->
+    <div class="modal fade" id="deleteModal{{ resena.id_resena }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirmar eliminación</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>¿Estás seguro de que deseas eliminar esta reseña?</p>
+                    <p><strong>Producto:</strong> {{ resena.producto.nombre }}</p>
+                    <p><strong>Puntuación:</strong> {{ resena.estrellitas }}</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <form action="{{ url_for('usuarios.eliminar_resena', resena_id=resena.id_resena) }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-danger">Eliminar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    
+    <!-- Paginación -->
+    {% if resenas.pages > 1 %}
+    <nav aria-label="Navegación de páginas" class="mt-5">
+        <ul class="pagination justify-content-center">
+            {% if resenas.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('usuarios.mis_resenas', page=resenas.prev_num, puntaje=request.args.get('puntaje', ''), tipo=request.args.get('tipo', '')) }}" aria-label="Anterior">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <a class="page-link" href="#" aria-label="Anterior">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for page_num in resenas.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                {% if page_num %}
+                    {% if resenas.page == page_num %}
+                    <li class="page-item active">
+                        <a class="page-link" href="{{ url_for('usuarios.mis_resenas', page=page_num, puntaje=request.args.get('puntaje', ''), tipo=request.args.get('tipo', '')) }}">{{ page_num }}</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('usuarios.mis_resenas', page=page_num, puntaje=request.args.get('puntaje', ''), tipo=request.args.get('tipo', '')) }}">{{ page_num }}</a>
+                    </li>
+                    {% endif %}
+                {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#">...</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if resenas.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('usuarios.mis_resenas', page=resenas.next_num, puntaje=request.args.get('puntaje', ''), tipo=request.args.get('tipo', '')) }}" aria-label="Siguiente">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <a class="page-link" href="#" aria-label="Siguiente">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    
+    {% else %}
+    <div class="alert alert-info text-center">
+        <h4 class="alert-heading">No has escrito reseñas</h4>
+        <p>Aún no has escrito reseñas para ningún producto. ¡Explora la aplicación y comparte tu opinión!</p>
+        <hr>
+        <a href="{{ url_for('main.index') }}" class="btn btn-primary">
+            <i class="fas fa-search me-2"></i>Explorar Productos
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

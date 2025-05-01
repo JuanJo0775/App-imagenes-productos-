@@ -1,0 +1,78 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h3 class="card-title mb-0">Crear Cuenta</h3>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.nombre_usuario.label(class="form-label") }}
+                        {% if form.nombre_usuario.errors %}
+                            {{ form.nombre_usuario(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.nombre_usuario.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.nombre_usuario(class="form-control") }}
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.email.label(class="form-label") }}
+                        {% if form.email.errors %}
+                            {{ form.email(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.email.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.email(class="form-control") }}
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.contrasena.label(class="form-label") }}
+                        {% if form.contrasena.errors %}
+                            {{ form.contrasena(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.contrasena.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.contrasena(class="form-control") }}
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.confirmar_contrasena.label(class="form-label") }}
+                        {% if form.confirmar_contrasena.errors %}
+                            {{ form.confirmar_contrasena(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.confirmar_contrasena.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.confirmar_contrasena(class="form-control") }}
+                        {% endif %}
+                    </div>
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center">
+                <small class="text-muted">
+                    ¿Ya tienes una cuenta? <a href="{{ url_for('auth.login') }}">Inicia sesión aquí</a>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

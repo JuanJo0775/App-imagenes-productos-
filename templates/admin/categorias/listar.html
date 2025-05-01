@@ -1,0 +1,229 @@
+{% extends "layout.html" %}
+
+{% block styles %}
+<style>
+    .admin-container {
+        background-color: #f8f9fa;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .nav-admin {
+        background-color: #343a40;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .nav-admin .nav-link {
+        color: #fff;
+        padding: 10px 15px;
+    }
+    
+    .nav-admin .nav-link.active {
+        background-color: #0d6efd;
+        border-radius: 5px;
+    }
+    
+    .nav-admin .nav-link:hover:not(.active) {
+        background-color: rgba(255,255,255,0.1);
+        border-radius: 5px;
+    }
+    
+    .admin-table {
+        background-color: #fff;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .admin-table th {
+        background-color: #f8f9fa;
+    }
+    
+    .categoria-miniatura {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 5px;
+    }
+    
+    .btn-acciones {
+        white-space: nowrap;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Administrar Categorías</h1>
+
+<!-- Menú de Navegación Admin -->
+<nav class="nav-admin">
+    <div class="container">
+        <ul class="nav">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin.listar_productos') }}">Productos</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="{{ url_for('admin.listar_categorias') }}">Categorías</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin.listar_usuarios') }}">Usuarios</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="admin-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Lista de Categorías</h2>
+        <a href="{{ url_for('admin.nueva_categoria') }}" class="btn btn-success">
+            <i class="fas fa-plus me-2"></i>Nueva Categoría
+        </a>
+    </div>
+    
+    {% if categorias.items %}
+    <div class="table-responsive admin-table">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Imagen</th>
+                    <th scope="col">Nombre</th>
+                    <th scope="col">Productos</th>
+                    <th scope="col">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for categoria in categorias.items %}
+                <tr>
+                    <th scope="row">{{ categoria.id_categoria }}</th>
+                    <td>
+                        {% if categoria.imagenes %}
+                        <img src="{{ url_for('static', filename=categoria.imagenes[0].ruta_archivo) }}" class="categoria-miniatura" alt="{{ categoria.nombre_categoria }}">
+                        {% else %}
+                        <div class="categoria-miniatura bg-light d-flex align-items-center justify-content-center">
+                            <i class="fas fa-image text-muted"></i>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>{{ categoria.nombre_categoria }}</td>
+                    <td>{{ categoria.productos | length }}</td>
+                    <td class="btn-acciones">
+                        <a href="{{ url_for('productos.por_categoria', categoria_id=categoria.id_categoria) }}" class="btn btn-sm btn-outline-primary" title="Ver productos">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="{{ url_for('admin.editar_categoria', categoria_id=categoria.id_categoria) }}" class="btn btn-sm btn-outline-success" title="Editar categoría">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="{{ url_for('admin.administrar_imagenes_categoria', categoria_id=categoria.id_categoria) }}" class="btn btn-sm btn-outline-info" title="Administrar imágenes">
+                            <i class="fas fa-images"></i>
+                        </a>
+                        <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar categoría" data-bs-toggle="modal" data-bs-target="#deleteModal{{ categoria.id_categoria }}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        
+                        <!-- Modal de confirmación de eliminación -->
+                        <div class="modal fade" id="deleteModal{{ categoria.id_categoria }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ categoria.id_categoria }}" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="deleteModalLabel{{ categoria.id_categoria }}">Confirmar eliminación</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p>¿Estás seguro de que deseas eliminar la categoría <strong>{{ categoria.nombre_categoria }}</strong>?</p>
+                                        {% if categoria.productos %}
+                                        <p class="text-danger">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            Esta categoría tiene {{ categoria.productos | length }} producto(s) asociado(s). 
+                                            Si la eliminas, los productos quedarán sin categoría.
+                                        </p>
+                                        {% endif %}
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <form action="{{ url_for('admin.eliminar_categoria', categoria_id=categoria.id_categoria) }}" method="POST">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-danger">Eliminar</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Paginación -->
+    {% if categorias.pages > 1 %}
+    <nav aria-label="Navegación de páginas" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if categorias.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('admin.listar_categorias', page=categorias.prev_num) }}" aria-label="Anterior">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <a class="page-link" href="#" aria-label="Anterior">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for page_num in categorias.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                {% if page_num %}
+                    {% if categorias.page == page_num %}
+                    <li class="page-item active">
+                        <a class="page-link" href="{{ url_for('admin.listar_categorias', page=page_num) }}">{{ page_num }}</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.listar_categorias', page=page_num) }}">{{ page_num }}</a>
+                    </li>
+                    {% endif %}
+                {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#">...</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if categorias.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('admin.listar_categorias', page=categorias.next_num) }}" aria-label="Siguiente">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <a class="page-link" href="#" aria-label="Siguiente">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    
+    {% else %}
+    <div class="alert alert-info">
+        <h4 class="alert-heading">No hay categorías</h4>
+        <p>Actualmente no hay categorías en la base de datos. ¡Crea tu primera categoría!</p>
+        <hr>
+        <div class="d-grid gap-2 col-6 mx-auto">
+            <a href="{{ url_for('admin.nueva_categoria') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Nueva Categoría
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

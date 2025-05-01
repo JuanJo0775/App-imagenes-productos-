@@ -1,0 +1,241 @@
+{% extends "layout.html" %}
+
+{% block styles %}
+<style>
+    .admin-container {
+        background-color: #f8f9fa;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .nav-admin {
+        background-color: #343a40;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .nav-admin .nav-link {
+        color: #fff;
+        padding: 10px 15px;
+    }
+    
+    .nav-admin .nav-link.active {
+        background-color: #0d6efd;
+        border-radius: 5px;
+    }
+    
+    .nav-admin .nav-link:hover:not(.active) {
+        background-color: rgba(255,255,255,0.1);
+        border-radius: 5px;
+    }
+    
+    .form-card {
+        background-color: #fff;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    
+    .imagen-card {
+        position: relative;
+        border-radius: 10px;
+        overflow: hidden;
+        transition: transform 0.3s ease;
+        height: 200px;
+    }
+    
+    .imagen-card:hover {
+        transform: scale(1.03);
+    }
+    
+    .imagen-card img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .imagen-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .imagen-card:hover .imagen-overlay {
+        opacity: 1;
+    }
+    
+    .imagen-nombre {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        font-size: 0.9rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .imagen-fecha {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 5px 8px;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        font-size: 0.8rem;
+        border-radius: 5px;
+    }
+    
+    .delete-button {
+        color: white;
+        background-color: #dc3545;
+        border: none;
+        border-radius: 5px;
+        padding: 8px 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .delete-button:hover {
+        background-color: #c82333;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Administrar Imágenes - {{ producto.nombre }}</h1>
+
+<!-- Menú de Navegación Admin -->
+<nav class="nav-admin">
+    <div class="container">
+        <ul class="nav">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="{{ url_for('admin.listar_productos') }}">Productos</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin.listar_categorias') }}">Categorías</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin.listar_usuarios') }}">Usuarios</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="admin-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Subir Nueva Imagen</h2>
+        <a href="{{ url_for('admin.editar_producto', producto_id=producto.id_producto) }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Volver al Producto
+        </a>
+    </div>
+    
+    <!-- Formulario para subir imágenes -->
+    <div class="form-card">
+        <form method="POST" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    {{ form.nombre.label(class="form-label") }}
+                    {% if form.nombre.errors %}
+                        {{ form.nombre(class="form-control is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.nombre.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.nombre(class="form-control", placeholder="Nombre descriptivo para la imagen (opcional)") }}
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    {{ form.imagen.label(class="form-label") }}
+                    {% if form.imagen.errors %}
+                        {{ form.imagen(class="form-control is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.imagen.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.imagen(class="form-control") }}
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="d-grid gap-2">
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
+    
+    <!-- Imágenes actuales -->
+    <h3 class="mt-5 mb-4">Imágenes Actuales ({{ imagenes|length }})</h3>
+    
+    {% if imagenes %}
+    <div class="row">
+        {% for imagen in imagenes %}
+        <div class="col-md-3 mb-4">
+            <div class="imagen-card shadow-sm">
+                <img src="{{ url_for('static', filename=imagen.ruta_archivo) }}" alt="{{ imagen.nombre_archivo }}">
+                <div class="imagen-nombre">{{ imagen.nombre_archivo }}</div>
+                <div class="imagen-fecha">{{ imagen.fecha_subida.strftime('%d/%m/%Y') }}</div>
+                <div class="imagen-overlay">
+                    <button type="button" class="delete-button" data-bs-toggle="modal" data-bs-target="#deleteModal{{ imagen.id_imagen }}">
+                        <i class="fas fa-trash me-2"></i>Eliminar
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Modal de confirmación de eliminación -->
+            <div class="modal fade" id="deleteModal{{ imagen.id_imagen }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Confirmar eliminación</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>¿Estás seguro de que deseas eliminar esta imagen?</p>
+                            <div class="text-center">
+                                <img src="{{ url_for('static', filename=imagen.ruta_archivo) }}" alt="{{ imagen.nombre_archivo }}" style="max-width: 100%; max-height: 200px; object-fit: contain;">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <form action="{{ url_for('admin.eliminar_imagen_producto', imagen_id=imagen.id_imagen) }}" method="POST">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-danger">Eliminar</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <p>No hay imágenes para este producto. Sube la primera imagen utilizando el formulario de arriba.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

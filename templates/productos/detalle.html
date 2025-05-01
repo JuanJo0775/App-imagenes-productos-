@@ -1,0 +1,496 @@
+{% extends "layout.html" %}
+
+{% block styles %}
+<style>
+    .producto-imagen {
+        height: 400px;
+        width: 100%;
+        object-fit: cover;
+        border-radius: 15px;
+    }
+
+    .video-container {
+        position: relative;
+        padding-bottom: 56.25%; /* Proporción 16:9 */
+        height: 0;
+        overflow: hidden;
+        border-radius: 15px;
+    }
+
+    .video-container video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .thumbnail-container {
+        display: flex;
+        overflow-x: auto;
+        gap: 10px;
+        padding: 10px 0;
+    }
+
+    .thumbnail {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .thumbnail:hover {
+        transform: scale(1.05);
+    }
+
+    .resena-card {
+        border-radius: 15px;
+        margin-bottom: 20px;
+    }
+
+    .puntuacion {
+        font-size: 1.2rem;
+        color: #f8c01d;
+    }
+
+    .interaction-btn {
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .interaction-btn:hover {
+        transform: scale(1.2);
+    }
+
+    .active-like {
+        color: #0d6efd;
+    }
+
+    .active-dislike {
+        color: #dc3545;
+    }
+
+    .active-favorite {
+        color: #f8c01d;
+    }
+
+    .ficha-tecnica {
+        background-color: #f8f9fa;
+        border-radius: 15px;
+        padding: 20px;
+    }
+
+    .related-product {
+        transition: transform 0.3s ease;
+    }
+
+    .related-product:hover {
+        transform: translateY(-5px);
+    }
+
+    .related-img {
+        height: 150px;
+        object-fit: cover;
+        border-radius: 10px 10px 0 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Columna de Imagenes y Videos -->
+    <div class="col-lg-7 mb-4">
+        <!-- Video Principal (si existe) -->
+        {% if producto.videos %}
+        <div class="video-container mb-3">
+            <video controls autoplay muted>
+                <source src="{{ url_for('static', filename=producto.videos[0].ruta_archivo) }}" type="video/mp4">
+                Tu navegador no soporta videos HTML5.
+            </video>
+        </div>
+        {% elif producto.imagenes %}
+        <!-- Imagen Principal (si no hay video pero hay imágenes) -->
+        <img src="{{ url_for('static', filename=producto.imagenes[0].ruta_archivo) }}" class="producto-imagen mb-3" id="imagen-principal" alt="{{ producto.nombre }}">
+        {% else %}
+        <!-- Placeholder si no hay imágenes ni videos -->
+        <div class="producto-imagen bg-light d-flex align-items-center justify-content-center mb-3">
+            <i class="fas fa-image text-muted fa-5x"></i>
+        </div>
+        {% endif %}
+
+        <!-- Miniaturas de imágenes adicionales -->
+        {% if producto.imagenes|length > 1 or (producto.videos and producto.imagenes) %}
+        <div class="thumbnail-container">
+            {% for imagen in producto.imagenes %}
+            <img src="{{ url_for('static', filename=imagen.ruta_archivo) }}"
+                 class="thumbnail"
+                 alt="Miniatura {{ loop.index }}"
+                 onclick="cambiarImagen('{{ url_for('static', filename=imagen.ruta_archivo) }}')">
+            {% endfor %}
+
+            {% for video in producto.videos %}
+            <div class="thumbnail bg-dark d-flex align-items-center justify-content-center"
+                 onclick="mostrarVideo('{{ url_for('static', filename=video.ruta_archivo) }}')">
+                <i class="fas fa-play text-white"></i>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Información del Producto -->
+    <div class="col-lg-5">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <h1 class="mb-0">{{ producto.nombre }}</h1>
+
+            <!-- Interacciones (like, dislike, favorito) -->
+            {% if current_user.is_authenticated %}
+            <div class="d-flex gap-3">
+                <!-- Like Button -->
+                <span class="interaction-btn fs-4 {% if user_interaction and user_interaction.tipo_interaccion == 'like' %}active-like{% endif %}"
+                      id="like-btn"
+                      onclick="interactuar('like')">
+                    <i class="fas fa-thumbs-up"></i>
+                    <span id="likes-count">{{ producto.likes }}</span>
+                </span>
+
+                <!-- Dislike Button -->
+                <span class="interaction-btn fs-4 {% if user_interaction and user_interaction.tipo_interaccion == 'dislike' %}active-dislike{% endif %}"
+                      id="dislike-btn"
+                      onclick="interactuar('dislike')">
+                    <i class="fas fa-thumbs-down"></i>
+                    <span id="dislikes-count">{{ producto.dislikes }}</span>
+                </span>
+
+                <!-- Favorite Button -->
+                <span class="interaction-btn fs-4 {% if is_favorite %}active-favorite{% endif %}"
+                      id="favorite-btn"
+                      onclick="toggleFavorito()">
+                    <i class="fas fa-heart"></i>
+                </span>
+            </div>
+            {% else %}
+            <div class="d-flex gap-3">
+                <span class="fs-4">
+                    <i class="fas fa-thumbs-up"></i>
+                    <span>{{ producto.likes }}</span>
+                </span>
+                <span class="fs-4">
+                    <i class="fas fa-thumbs-down"></i>
+                    <span>{{ producto.dislikes }}</span>
+                </span>
+                <span class="fs-4">
+                    <i class="far fa-heart"></i>
+                </span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Categoria -->
+        {% if producto.categoria %}
+        <div class="mb-3">
+            <a href="{{ url_for('productos.por_categoria', categoria_id=producto.id_categoria) }}" class="badge bg-primary text-decoration-none">
+                {{ producto.categoria.nombre_categoria }}
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Descripción -->
+        <div class="mb-4">
+            <h4>Descripción</h4>
+            <p>{{ producto.descripcion or 'No hay descripción disponible para este producto.' }}</p>
+        </div>
+
+        <!-- Ficha Técnica (si existe) -->
+        {% if producto.ficha_tecnica %}
+        <div class="ficha-tecnica mb-4">
+            <h4>Ficha Técnica</h4>
+            <p class="mb-0">{{ producto.ficha_tecnica|nl2br }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Estadísticas -->
+        <div class="d-flex justify-content-between mb-4">
+            <div class="text-center">
+                <h6>Reseñas</h6>
+                <p class="mb-0 fw-bold">{{ resenas|length }}</p>
+            </div>
+            <div class="text-center">
+                <h6>Likes</h6>
+                <p class="mb-0 fw-bold">{{ producto.likes }}</p>
+            </div>
+            <div class="text-center">
+                <h6>Fecha Ingreso</h6>
+                <p class="mb-0 fw-bold">{{ producto.fecha_ingreso.strftime('%d/%m/%Y') }}</p>
+            </div>
+        </div>
+
+        <!-- Botones de acción -->
+        <div class="d-grid gap-2">
+            {% if current_user.is_authenticated %}
+            <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseForm" aria-expanded="false" aria-controls="collapseForm">
+                Dejar una reseña
+            </button>
+            {% else %}
+            <a href="{{ url_for('auth.login', next=request.path) }}" class="btn btn-primary">
+                Inicia sesión para dejar una reseña
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Formulario de Reseña (Colapsable) -->
+{% if current_user.is_authenticated %}
+<div class="collapse mb-5" id="collapseForm">
+    <div class="card card-body">
+        <h4 class="mb-3">Deja tu reseña</h4>
+        <form method="POST" action="{{ url_for('productos.agregar_resena', producto_id=producto.id_producto) }}">
+            {{ form.hidden_tag() }}
+            <div class="mb-3">
+                {{ form.puntuacion.label(class="form-label") }}
+                <div class="rating">
+                    {% for i in range(5, 0, -1) %}
+                    <input type="radio" name="puntuacion" value="{{ i }}" id="star{{ i }}" {% if form.puntuacion.data == i %}checked{% endif %}>
+                    <label for="star{{ i }}">★</label>
+                    {% endfor %}
+                </div>
+                {% if form.puntuacion.errors %}
+                <div class="invalid-feedback d-block">
+                    {% for error in form.puntuacion.errors %}
+                    <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                {{ form.comentario.label(class="form-label") }}
+                {% if form.comentario.errors %}
+                {{ form.comentario(class="form-control is-invalid", rows=4) }}
+                <div class="invalid-feedback">
+                    {% for error in form.comentario.errors %}
+                    <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {% else %}
+                {{ form.comentario(class="form-control", rows=4) }}
+                {% endif %}
+            </div>
+
+            <div class="d-grid gap-2">
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<!-- Reseñas de Productos -->
+<section class="mb-5">
+    <h3 class="mb-4">Reseñas ({{ resenas|length }})</h3>
+
+    {% if resenas %}
+    {% for resena in resenas %}
+    <div class="card resena-card mb-3">
+        <div class="card-body">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h5 class="card-title">{{ resena.usuario.nombre_usuario if resena.usuario else 'Usuario Anónimo' }}</h5>
+                    <p class="puntuacion mb-2">{{ resena.estrellitas }}</p>
+                </div>
+                <div class="text-muted small">
+                    {{ resena.fecha_hora.strftime('%d/%m/%Y %H:%M') }}
+                </div>
+            </div>
+            <p class="card-text">{{ resena.comentario or 'Sin comentario' }}</p>
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="badge bg-{{ 'success' if resena.tipo_comentario == 'positivo' else 'danger' }}">
+                    Comentario {{ resena.tipo_comentario }}
+                </span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="alert alert-info">
+        No hay reseñas para este producto todavía. ¡Sé el primero en comentar!
+    </div>
+    {% endif %}
+</section>
+
+<!-- Productos Relacionados -->
+{% if relacionados %}
+<section>
+    <h3 class="mb-4">Productos Relacionados</h3>
+    <div class="row">
+        {% for rel_producto in relacionados %}
+        <div class="col-md-3 mb-4">
+            <div class="card related-product">
+                {% if rel_producto.imagenes %}
+                <img src="{{ url_for('static', filename=rel_producto.imagenes[0].ruta_archivo) }}" class="related-img" alt="{{ rel_producto.nombre }}">
+                {% else %}
+                <div class="related-img bg-light d-flex align-items-center justify-content-center">
+                    <i class="fas fa-image text-muted fa-2x"></i>
+                </div>
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title text-truncate">{{ rel_producto.nombre }}</h5>
+                    <a href="{{ url_for('productos.ver_producto', producto_id=rel_producto.id_producto) }}" class="btn btn-sm btn-outline-primary">Ver detalles</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Función para cambiar la imagen principal
+    function cambiarImagen(ruta) {
+        // Eliminar el video si existe
+        let contenedor = document.querySelector('.col-lg-7');
+        let elementoPrincipal = contenedor.firstElementChild;
+
+        if (elementoPrincipal.classList.contains('video-container')) {
+            // Reemplazar con imagen
+            let img = document.createElement('img');
+            img.src = ruta;
+            img.id = 'imagen-principal';
+            img.className = 'producto-imagen mb-3';
+            img.alt = '{{ producto.nombre }}';
+
+            contenedor.replaceChild(img, elementoPrincipal);
+        } else {
+            // Actualizar imagen existente
+            document.getElementById('imagen-principal').src = ruta;
+        }
+    }
+
+    // Función para mostrar un video
+    function mostrarVideo(ruta) {
+        let contenedor = document.querySelector('.col-lg-7');
+        let elementoPrincipal = contenedor.firstElementChild;
+
+        // Crear nuevo contenedor de video
+        let videoContainer = document.createElement('div');
+        videoContainer.className = 'video-container mb-3';
+
+        // Crear elemento de video
+        let video = document.createElement('video');
+        video.controls = true;
+        video.autoplay = true;
+
+        // Crear source
+        let source = document.createElement('source');
+        source.src = ruta;
+        source.type = 'video/mp4';
+
+        // Mensaje de fallback
+        let fallback = document.createTextNode('Tu navegador no soporta videos HTML5.');
+
+        // Estructurar
+        video.appendChild(source);
+        video.appendChild(fallback);
+        videoContainer.appendChild(video);
+
+        // Reemplazar elemento principal
+        contenedor.replaceChild(videoContainer, elementoPrincipal);
+    }
+
+    {% if current_user.is_authenticated %}
+    // Función para interactuar (like/dislike)
+    function interactuar(tipo) {
+        fetch('{{ url_for("productos.interactuar", producto_id=producto.id_producto) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: 'tipo=' + tipo
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Actualizar contadores
+                document.getElementById('likes-count').textContent = {{ producto.likes }};
+                document.getElementById('dislikes-count').textContent = {{ producto.dislikes }};
+
+                // Actualizar clases
+                if (tipo === 'like') {
+                    if (data.action === 'added' || data.action === 'changed') {
+                        document.getElementById('like-btn').classList.add('active-like');
+                        document.getElementById('dislike-btn').classList.remove('active-dislike');
+                    } else {
+                        document.getElementById('like-btn').classList.remove('active-like');
+                    }
+                } else if (tipo === 'dislike') {
+                    if (data.action === 'added' || data.action === 'changed') {
+                        document.getElementById('dislike-btn').classList.add('active-dislike');
+                        document.getElementById('like-btn').classList.remove('active-like');
+                    } else {
+                        document.getElementById('dislike-btn').classList.remove('active-dislike');
+                    }
+                }
+
+                // Recargar la página para ver cambios actualizados
+                location.reload();
+            }
+        });
+    }
+
+    // Función para toggle favorito
+    function toggleFavorito() {
+        fetch('{{ url_for("productos.toggle_favorito", producto_id=producto.id_producto) }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Toggle clase visual
+                if (data.action === 'added') {
+                    document.getElementById('favorite-btn').classList.add('active-favorite');
+                } else {
+                    document.getElementById('favorite-btn').classList.remove('active-favorite');
+                }
+            }
+        });
+    }
+    {% endif %}
+
+    // Estilo personalizado para estrellas de reseña
+    document.addEventListener('DOMContentLoaded', function() {
+        const style = document.createElement('style');
+        style.textContent = `
+            .rating {
+                display: flex;
+                flex-direction: row-reverse;
+                justify-content: flex-end;
+            }
+            .rating input {
+                display: none;
+            }
+            .rating label {
+                font-size: 30px;
+                color: #ddd;
+                cursor: pointer;
+                margin: 0 5px;
+            }
+            .rating label:hover,
+            .rating label:hover ~ label,
+            .rating input:checked ~ label {
+                color: #f8c01d;
+            }
+        `;
+        document.head.appendChild(style);
+    });
+</script>
+{% endblock %}

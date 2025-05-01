@@ -1,0 +1,178 @@
+{% extends "layout.html" %}
+
+{% block styles %}
+<style>
+    .admin-container {
+        background-color: #f8f9fa;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .nav-admin {
+        background-color: #343a40;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .nav-admin .nav-link {
+        color: #fff;
+        padding: 10px 15px;
+    }
+    
+    .nav-admin .nav-link.active {
+        background-color: #0d6efd;
+        border-radius: 5px;
+    }
+    
+    .nav-admin .nav-link:hover:not(.active) {
+        background-color: rgba(255,255,255,0.1);
+        border-radius: 5px;
+    }
+    
+    .form-card {
+        background-color: #fff;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">{{ legend }}</h1>
+
+<!-- Menú de Navegación Admin -->
+<nav class="nav-admin">
+    <div class="container">
+        <ul class="nav">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="{{ url_for('admin.listar_productos') }}">Productos</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin.listar_categorias') }}">Categorías</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin.listar_usuarios') }}">Usuarios</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="admin-container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="form-card">
+                <form method="POST" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.nombre.label(class="form-label") }}
+                        {% if form.nombre.errors %}
+                            {{ form.nombre(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.nombre.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.nombre(class="form-control") }}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.id_categoria.label(class="form-label") }}
+                        {% if form.id_categoria.errors %}
+                            {{ form.id_categoria(class="form-select is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.id_categoria.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.id_categoria(class="form-select") }}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.descripcion.label(class="form-label") }}
+                        {% if form.descripcion.errors %}
+                            {{ form.descripcion(class="form-control is-invalid", rows=5) }}
+                            <div class="invalid-feedback">
+                                {% for error in form.descripcion.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.descripcion(class="form-control", rows=5) }}
+                        {% endif %}
+                        <div class="form-text">Descripción detallada del producto que se mostrará a los usuarios.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.ficha_tecnica.label(class="form-label") }}
+                        {% if form.ficha_tecnica.errors %}
+                            {{ form.ficha_tecnica(class="form-control is-invalid", rows=5) }}
+                            <div class="invalid-feedback">
+                                {% for error in form.ficha_tecnica.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.ficha_tecnica(class="form-control", rows=5) }}
+                        {% endif %}
+                        <div class="form-text">Especificaciones técnicas del producto. Cada característica debe ir en una línea separada.</div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{{ url_for('admin.listar_productos') }}" class="btn btn-secondary">Cancelar</a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+                
+                <!-- Botones adicionales si es edición -->
+                {% if producto %}
+                <div class="d-flex justify-content-between mt-4 border-top pt-4">
+                    <div>
+                        <a href="{{ url_for('admin.administrar_imagenes_producto', producto_id=producto.id_producto) }}" class="btn btn-outline-primary me-2">
+                            <i class="fas fa-images me-2"></i>Administrar Imágenes
+                        </a>
+                        <a href="{{ url_for('admin.administrar_videos_producto', producto_id=producto.id_producto) }}" class="btn btn-outline-primary">
+                            <i class="fas fa-video me-2"></i>Administrar Videos
+                        </a>
+                    </div>
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                        <i class="fas fa-trash me-2"></i>Eliminar Producto
+                    </button>
+                </div>
+                
+                <!-- Modal de confirmación de eliminación -->
+                <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="deleteModalLabel">Confirmar eliminación</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                ¿Estás seguro de que deseas eliminar el producto <strong>{{ producto.nombre }}</strong>? Esta acción no se puede deshacer.
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <form action="{{ url_for('admin.eliminar_producto', producto_id=producto.id_producto) }}" method="POST">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

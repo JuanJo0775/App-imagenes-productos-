@@ -1,0 +1,218 @@
+{% extends "layout.html" %}
+
+{% block styles %}
+<style>
+    .admin-container {
+        background-color: #f8f9fa;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .stats-card {
+        background-color: #fff;
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .stats-icon {
+        font-size: 2rem;
+        margin-bottom: 10px;
+    }
+
+    .stats-number {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 0;
+    }
+
+    .stats-label {
+        color: #6c757d;
+        margin-bottom: 0;
+    }
+
+    .nav-admin {
+        background-color: #343a40;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+
+    .nav-admin .nav-link {
+        color: #fff;
+        padding: 10px 15px;
+    }
+
+    .nav-admin .nav-link.active {
+        background-color: #0d6efd;
+        border-radius: 5px;
+    }
+
+    .nav-admin .nav-link:hover:not(.active) {
+        background-color: rgba(255,255,255,0.1);
+        border-radius: 5px;
+    }
+
+    .admin-table {
+        background-color: #fff;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .admin-table th {
+        background-color: #f8f9fa;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Panel de Administración</h1>
+
+<!-- Menú de Navegación Admin -->
+<nav class="nav-admin">
+    <div class="container">
+        <ul class="nav">
+            <li class="nav-item">
+                <a class="nav-link active" href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin.listar_productos') }}">Productos</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin.listar_categorias') }}">Categorías</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin.listar_usuarios') }}">Usuarios</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<!-- Estadísticas -->
+<div class="admin-container">
+    <h2 class="mb-4">Resumen</h2>
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <div class="stats-card">
+                <div class="stats-icon text-primary">
+                    <i class="fas fa-box"></i>
+                </div>
+                <p class="stats-number">{{ total_productos }}</p>
+                <p class="stats-label">Productos</p>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="stats-card">
+                <div class="stats-icon text-success">
+                    <i class="fas fa-tags"></i>
+                </div>
+                <p class="stats-number">{{ total_categorias }}</p>
+                <p class="stats-label">Categorías</p>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="stats-card">
+                <div class="stats-icon text-info">
+                    <i class="fas fa-users"></i>
+                </div>
+                <p class="stats-number">{{ total_usuarios }}</p>
+                <p class="stats-label">Usuarios</p>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="stats-card">
+                <div class="stats-icon text-warning">
+                    <i class="fas fa-comment"></i>
+                </div>
+                <p class="stats-number">{{ total_resenas }}</p>
+                <p class="stats-label">Reseñas</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Productos Recientes -->
+<div class="admin-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Productos Recientes</h2>
+        <a href="{{ url_for('admin.listar_productos') }}" class="btn btn-primary">Ver todos</a>
+    </div>
+
+    <div class="table-responsive admin-table">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Nombre</th>
+                    <th scope="col">Categoría</th>
+                    <th scope="col">Fecha</th>
+                    <th scope="col">Likes</th>
+                    <th scope="col">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for producto in productos_recientes %}
+                <tr>
+                    <th scope="row">{{ producto.id_producto }}</th>
+                    <td>{{ producto.nombre }}</td>
+                    <td>{{ producto.categoria.nombre_categoria if producto.categoria else 'Sin categoría' }}</td>
+                    <td>{{ producto.fecha_ingreso.strftime('%d/%m/%Y') }}</td>
+                    <td>{{ producto.likes }}</td>
+                    <td>
+                        <a href="{{ url_for('productos.ver_producto', producto_id=producto.id_producto) }}" class="btn btn-sm btn-outline-primary" title="Ver producto">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="{{ url_for('admin.editar_producto', producto_id=producto.id_producto) }}" class="btn btn-sm btn-outline-success" title="Editar producto">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Usuarios Recientes -->
+<div class="admin-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Usuarios Recientes</h2>
+        <a href="{{ url_for('admin.listar_usuarios') }}" class="btn btn-primary">Ver todos</a>
+    </div>
+
+    <div class="table-responsive admin-table">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Nombre</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Fecha de Registro</th>
+                    <th scope="col">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for usuario in usuarios_recientes %}
+                <tr>
+                    <th scope="row">{{ usuario.id_usuario }}</th>
+                    <td>{{ usuario.nombre_usuario }}</td>
+                    <td>{{ usuario.email }}</td>
+                    <td>{{ usuario.fecha_registro.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td>
+                        <a href="{{ url_for('admin.detalle_usuario', usuario_id=usuario.id_usuario) }}" class="btn btn-sm btn-outline-info" title="Ver detalles">
+                            <i class="fas fa-user"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

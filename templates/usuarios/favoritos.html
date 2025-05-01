@@ -1,0 +1,139 @@
+{% extends "layout.html" %}
+
+{% block styles %}
+<style>
+    .masonry-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+        grid-gap: 20px;
+    }
+    
+    .producto-card {
+        transition: transform 0.3s ease;
+        border-radius: 15px;
+        overflow: hidden;
+    }
+    
+    .producto-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .card-img-top {
+        height: 220px;
+        object-fit: cover;
+    }
+    
+    .header-section {
+        background-color: #f8f9fa;
+        padding: 40px 0;
+        margin-bottom: 30px;
+        border-radius: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Sección de encabezado -->
+<div class="header-section text-center">
+    <div class="container">
+        <h1 class="display-5">Mis Productos Favoritos</h1>
+        <p class="lead">Aquí encontrarás todos los productos que has guardado como favoritos.</p>
+    </div>
+</div>
+
+<div class="container">
+    {% if productos.items %}
+    <div class="masonry-grid">
+        {% for producto in productos.items %}
+        <div class="card producto-card shadow-sm">
+            <a href="{{ url_for('productos.ver_producto', producto_id=producto.id_producto) }}" class="text-decoration-none">
+                {% if producto.imagenes %}
+                <img src="{{ url_for('static', filename=producto.imagenes[0].ruta_archivo) }}" class="card-img-top" alt="{{ producto.nombre }}">
+                {% else %}
+                <div class="card-img-top bg-light d-flex align-items-center justify-content-center">
+                    <i class="fas fa-image text-muted fa-3x"></i>
+                </div>
+                {% endif %}
+            </a>
+            
+            <div class="card-body">
+                <h5 class="card-title">{{ producto.nombre }}</h5>
+                <p class="card-text text-truncate">{{ producto.descripcion or 'Sin descripción' }}</p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="me-2"><i class="fas fa-heart text-danger"></i> {{ producto.likes }}</span>
+                        <span><i class="fas fa-comment text-primary"></i> {{ producto.comentarios_positivos + producto.comentarios_negativos }}</span>
+                    </div>
+                    <a href="{{ url_for('productos.ver_producto', producto_id=producto.id_producto) }}" class="btn btn-sm btn-primary">Ver más</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Paginación -->
+    {% if productos.pages > 1 %}
+    <nav aria-label="Navegación de páginas" class="mt-5">
+        <ul class="pagination justify-content-center">
+            {% if productos.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('usuarios.favoritos', page=productos.prev_num) }}" aria-label="Anterior">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <a class="page-link" href="#" aria-label="Anterior">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for page_num in productos.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                {% if page_num %}
+                    {% if productos.page == page_num %}
+                    <li class="page-item active">
+                        <a class="page-link" href="{{ url_for('usuarios.favoritos', page=page_num) }}">{{ page_num }}</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('usuarios.favoritos', page=page_num) }}">{{ page_num }}</a>
+                    </li>
+                    {% endif %}
+                {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#">...</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if productos.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('usuarios.favoritos', page=productos.next_num) }}" aria-label="Siguiente">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <a class="page-link" href="#" aria-label="Siguiente">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    
+    {% else %}
+    <div class="alert alert-info text-center">
+        <h4 class="alert-heading">No tienes favoritos</h4>
+        <p>Aún no has agregado productos a tus favoritos. ¡Explora la aplicación y guarda tus productos preferidos!</p>
+        <hr>
+        <a href="{{ url_for('main.index') }}" class="btn btn-primary">
+            <i class="fas fa-search me-2"></i>Explorar Productos
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
