@@ -12,7 +12,7 @@ SET collation_connection = utf8mb4_general_ci;
 SET collation_database = utf8mb4_general_ci;
 SET collation_server = utf8mb4_general_ci;
 
--- Drop tables if they exist (in correct order to respect foreign key constraints)
+-- Drop tables if they exist
 DROP TABLE IF EXISTS favoritos;
 DROP TABLE IF EXISTS imagenes_producto;
 DROP TABLE IF EXISTS videos_producto;
@@ -23,15 +23,14 @@ DROP TABLE IF EXISTS productos;
 DROP TABLE IF EXISTS categorias;
 DROP TABLE IF EXISTS usuarios;
 
--- Create tables in the correct order
+-- Create tables
 CREATE TABLE usuarios (
   id_usuario INT AUTO_INCREMENT PRIMARY KEY,
   nombre_usuario VARCHAR(100) NOT NULL,
   email VARCHAR(255) NOT NULL UNIQUE,
   contrasena VARCHAR(255) NOT NULL,
   fecha_registro DATETIME NOT NULL,
-  es_admin TINYINT(1) DEFAULT 0,
-  UNIQUE INDEX email (email)
+  es_admin TINYINT(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE categorias (
